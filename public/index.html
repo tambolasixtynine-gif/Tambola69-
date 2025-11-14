@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prize Claim System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      text-align: center;
+      padding: 20px;
+    }
+    button {
+      padding: 8px 14px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+    .claim {
+      background: #4caf50;
+      color: white;
+    }
+    .claimed {
+      background: #ccc;
+      color: #666;
+      cursor: not-allowed;
+    }
+    #prizeBox {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .prize {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 15px;
+      margin: 10px;
+      width: 140px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎟️ Prize Claim Box</h1>
+
+  <button onclick="generateNewTicket()">Generate New Ticket 🎫</button>
+
+  <div id="ticketInfo"></div>
+  <div id="prizeBox"></div>
+
+  <script>
+    async function generateNewTicket() {
+      const res = await fetch("/api/tickets/generate", { method: "POST" });
+      const data = await res.json();
+
+      document.getElementById("ticketInfo").innerHTML =
+        `<h3>Ticket ID: ${data.ticketId}</h3>`;
+
+      renderPrizes(data.prizes);
+    }
+
+    async function claimPrize(prizeId) {
+      const res = await fetch(`/api/prize/claim/${prizeId}`, { method: "POST" });
+      const data = await res.json();
+      renderPrizes(data.prizes);
+    }
+
+    function renderPrizes(prizes) {
+      const box = document.getElementById("prizeBox");
+      box.innerHTML = "";
+
+      prizes.forEach((prize) => {
+        const div = document.createElement("div");
+        div.className = "prize";
+
+        const btn = document.createElement("button");
+        if (prize.isClaimed) {
+          btn.textContent = "Claimed";
+          btn.className = "claimed";
+          btn.disabled = true;
+        } else {
+          btn.textContent = "Claim";
+          btn.className = "claim";
+          btn.onclick = () => claimPrize(prize.id);
+        }
+
+        div.innerHTML = `<h4>₹${prize.amount}</h4>`;
+        div.appendChild(btn);
+        box.appendChild(div);
+      });
+    }
+
+    async function loadPrizes() {
+      const res = await fetch("/api/prizes/status");
+      const data = await res.json();
+      renderPrizes(data);
+    }
+
+    loadPrizes();
+  </script>
+</body>
+</html>
