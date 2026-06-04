@@ -1100,6 +1100,88 @@
     const storage = firebase.storage();
     const storageRef = storage.ref();
 
+// --- Firebase Google & Facebook Login Script ---
+
+// 1. Google Login Function
+document.querySelector('.google-btn').addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    
+    firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+            const user = result.user;
+            saveUserDataToDatabase(user);
+        })
+        .catch((error) => {
+            console.error("Google Login Error:", error.message);
+            alert("Google login fail hua: " + error.message);
+        });
+});
+
+// 2. Facebook Login Function
+document.querySelector('.facebook-btn').addEventListener('click', () => {
+    const provider = new firebase.auth.FacebookAuthProvider();
+    
+    // Optional: Agar email permission bhi chahiye ho
+    provider.addScope('email');
+
+    firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+            const user = result.user;
+            saveUserDataToDatabase(user);
+        })
+        .catch((error) => {
+            console.error("Facebook Login Error:", error.message);
+            alert("Facebook login fail hua: " + error.message);
+        });
+});
+
+// 3. User Data ko Database me Humesha ke liye Save karne ka Function
+function saveUserDataToDatabase(user) {
+    // Firebase Realtime Database me 'users/userId' ke andar data save hoga
+    const userRef = firebase.database().ref('users/' + user.uid);
+
+    const userData = {
+        uid: user.uid,
+        name: user.displayName || "Anonymous User",
+        email: user.email || "No Email Provided",
+        profilePic: user.photoURL || "https://via.placeholder.com/100",
+        lastLogin: firebase.database.ServerValue.TIMESTAMP // Humesha sahi server time save karega
+    };
+
+    // .update() use karne se purana data (jaise coins ya winnings) delete nahi hota, sirf profile update hoti hai
+    userRef.update(userData)
+        .then(() => {
+            console.log("User data successfully saved permanently!");
+            
+            // Login kamyaab hone par main game open karne ka animation trigger karein
+            const animationContainer = document.getElementById('animationContainer');
+            const mainGameContainer = document.getElementById('mainGameContainer');
+            
+            gsap.to(animationContainer, {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => {
+                    animationContainer.style.display = 'none';
+                    mainGameContainer.style.display = 'block';
+                    gsap.from(mainGameContainer, {
+                        opacity: 0,
+                        y: 50,
+                        duration: 0.8,
+                        ease: 'power2.out'
+                    });
+                    
+                    // Profile Modal aur view me details load karwane ke liye
+                    if(document.getElementById('viewName')) document.getElementById('viewName').textContent = userData.name;
+                    if(document.getElementById('viewEmail')) document.getElementById('viewEmail').textContent = userData.email;
+                    if(document.getElementById('profileImagePreview')) document.getElementById('profileImagePreview').src = userData.profilePic;
+                }
+            });
+        })
+        .catch((dbError) => {
+            console.error("Database Save Error:", dbError.message);
+        });
+}
+
     /* ================= Elements ================= */
     const tambolaBoardEl = document.getElementById('tambola-board');
     const ticketEl = document.getElementById('ticket');
@@ -2503,7 +2585,7 @@
     
     // --- CLOUDINARY SETTINGS ---
     const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/danfo7z4n/image/upload";
-    const CLOUDINARY_UPLOAD_PRESET = "m8rclpuk"; // Dashboard -> Settings -> Upload -> Unsigned Upload Presets
+    const CLOUDINARY_UPLOAD_PRESET = "ml_default"; // Dashboard -> Settings -> Upload -> Unsigned Upload Presets
     
     const formData = new FormData();
     formData.append('file', imageFile);
