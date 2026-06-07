@@ -3614,6 +3614,67 @@
             }
         }
     }
+    // ========================================================
+    // ONLY GOOGLE & FACEBOOK LOGIN BUTTONS HANDLERS
+    // ========================================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+    const animationContainer = document.getElementById('animationContainer');
+    const mainGameContainer = document.getElementById('mainGameContainer');
+    
+    // Smooth transition function (Login ke baad main screen par le jaane ke liye)
+    function transitionToMainGame() {
+    gsap.to(animationContainer, {
+    opacity: 0,
+    duration: 0.5,
+    onComplete: () => {
+    animationContainer.style.display = 'none';
+    mainGameContainer.style.display = 'block';
+    gsap.from(mainGameContainer, {
+    opacity: 0,
+    y: 50,
+    duration: 0.8,
+    ease: 'power2.out'
+    });
+    }
+    });
+    }
+    
+    // 1. Google Sign-In Trigger
+    const googleBtn = document.getElementById('googleLoginBtn');
+    if (googleBtn) {
+    googleBtn.addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+    .then((result) => {
+    console.log("Google Login Successful:", result.user);
+    transitionToMainGame(); // Login hote hi main game show karega
+    })
+    .catch((error) => {
+    console.error("Google Login Failed:", error.message);
+    alert("Google Sign-In failed: " + error.message);
+    });
+    });
+    }
+    
+    // 2. Facebook Sign-In Trigger
+    const facebookBtn = document.getElementById('facebookLoginBtn');
+    if (facebookBtn) {
+    facebookBtn.addEventListener('click', () => {
+    const provider = new firebase.auth.FacebookAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+    .then((result) => {
+    console.log("Facebook Login Successful:", result.user);
+    transitionToMainGame(); // Login hote hi main game show karega
+    })
+    .catch((error) => {
+    console.error("Facebook Login Failed:", error.message);
+    alert("Facebook Sign-In failed: " + error.message);
+    });
+    });
+    }
+    });
+    
 </script>
 </body>
 </html>
