@@ -490,11 +490,11 @@
     </div>
     <div class="animation-login-box" id="animationLoginBox">
         <h2>Login to Continue</h2>
-        <button class="animation-login-button google-btn">
+        <button class="animation-login-button google-btn" id="googleLoginBtn">
             <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google">
             Sign in with Google
         </button>
-        <button class="animation-login-button facebook-btn">
+        <button class="animation-login-button facebook-btn" id="facebookLoginBtn">
             <img src="https://img.icons8.com/color/48/000000/facebook-new.png" alt="Facebook">
             Sign in with Facebook
         </button>
@@ -930,25 +930,50 @@
             ease: 'power3.out'
         }, '-=1');
 
-        // Optional: Transition to main game after login (assuming login is handled elsewhere)
-        // For demo, let's assume clicking a login button triggers this
-        animationLoginBox.querySelectorAll('.animation-login-button').forEach(button => {
-            button.addEventListener('click', () => {
-                gsap.to(animationContainer, {
-                    opacity: 0,
-                    duration: 0.5,
-                    onComplete: () => {
-                        animationContainer.style.display = 'none';
-                        mainGameContainer.style.display = 'block';
-                        gsap.from(mainGameContainer, {
-                            opacity: 0,
-                            y: 50,
-                            duration: 0.8,
-                            ease: 'power2.out'
-                        });
-                    }
-                });
+        // Helper function to transition into the game screen smoothly
+        function transitionToMainGame() {
+            gsap.to(animationContainer, {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => {
+                    animationContainer.style.display = 'none';
+                    mainGameContainer.style.display = 'block';
+                    gsap.from(mainGameContainer, {
+                        opacity: 0,
+                        y: 50,
+                        duration: 0.8,
+                        ease: 'power2.out'
+                    });
+                }
             });
+        }
+
+        // 🔥 GOOGLE SIGN-IN HANDLER
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    console.log("Google Login Successful:", result.user);
+                    transitionToMainGame();
+                })
+                .catch((error) => {
+                    console.error("Google Login Failed:", error.message);
+                    alert("Google Sign-In failed: " + error.message);
+                });
+        });
+
+        // 🔥 FACEBOOK SIGN-IN HANDLER
+        document.getElementById('facebookLoginBtn').addEventListener('click', () => {
+            const provider = new firebase.auth.FacebookAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    console.log("Facebook Login Successful:", result.user);
+                    transitionToMainGame();
+                })
+                .catch((error) => {
+                    console.error("Facebook Login Failed:", error.message);
+                    alert("Facebook Sign-In failed: " + error.message);
+                });
         });
     }
 
@@ -2036,26 +2061,77 @@
     window.showWinnerProfile = showWinnerProfile;
     // --- END ADDED ---
 
-    /* ================= Wallet helpers ================= */
-    async function ensureUserRecord(uid){
-      const userRef=db.ref('users/'+uid);
-      const snap=await userRef.once('value');
-      if(!snap.exists()){
-        await userRef.set({ name: localStorage.getItem(LS_NAME)||myName||'Guest', phone: localStorage.getItem(LS_CONTACT)||myContact||'', email: localStorage.getItem(LS_EMAIL) || myEmail || '', balance:0, imageUrl: myImageUrl });
-      }
-    }
-    async function getUserBalance(uid){
-      const snap=await db.ref('users/'+uid).once('value');
-      return (snap.val() && snap.val().balance) || 0;
-    }
-    async function setUserBalance(uid, newBal){
-      await db.ref('users/'+uid).update({ balance: newBal });
-      // 🔥 FIX: Check if element exists before setting text
-      if (myWinningsEl) {
-          myWinningsEl.textContent = newBal;
-      }
-    }
-
+   /* ================= Wallet helpers ================= */
+   
+   // 1. Ensure User Record: Agar naya user hai toh database m entry create karega
+   async function ensureUserRecord(uid){
+   const userRef = db.ref('users/' + uid);
+   const snap = await userRef.once('value');
+   if(!snap.exists()){
+   await userRef.set({ 
+   name: localStorage.getItem(LS_NAME) || myName || 'Guest', 
+   phone: localStorage.getItem(LS_CONTACT) || myContact || '', 
+   email: localStorage.getItem(LS_EMAIL) || myEmail || '', 
+   balance: 0, 
+   imageUrl: myImageUrl 
+   });
+   }
+   }
+   
+   // 2. Get User Balance: Firebase se current balance fetch karne k liye
+   async function getUserBalance(uid){
+   const snap = await db.ref('users/' + uid).once('value');
+   return (snap.val() && snap.val().balance) || 0;
+   }
+   
+   // 3. Set User Balance: Balance update karne aur screen par dikhane k liye
+   async function setUserBalance(uid, newBal){
+   await db.ref('users/' + uid).update({ balance: newBal });
+   // 🔥 Check if element exists before setting text
+   if (myWinningsEl) {
+   myWinningsEl.textContent = newBal;
+   }
+   }
+   
+   // 4. Init User Wallet: App open/reopen hone par balance load karne k liye
+   async function initUserWallet(uid) {
+   try {
+   // Pehle check karein ki user database m hai ya nahi
+   await ensureUserRecord(uid);
+   
+   // Firebase se actual balance nikalein
+   const currentBalance = await getUserBalance(uid);
+   
+   // Screen (UI) par balance show karein
+   if (myWinningsEl) {
+   myWinningsEl.textContent = currentBalance;
+   console.log("Wallet balance successfully loaded:", currentBalance);
+   }
+   } catch (error) {
+   console.error("Error loading wallet balance:", error);
+   }
+   }
+   
+   
+   /* ================= Firebase Auth Listener ================= */
+   // Is listener ko aap apne code m jahan auth handle hota h wahan lagayein
+   firebase.auth().onAuthStateChanged(async (user) => {
+   if (user) {
+   // User login h ya app reopen hui h
+   const uid = user.uid;
+   
+   // 🔥 App open hote hi ye function balance load kar dega
+   await initUserWallet(uid);
+   
+   // Aapka baki ka code yahan chalega (e.g., loadTickets() etc.)
+   } else {
+   // User logout h toh balance 0 dikhao
+   if (myWinningsEl) {
+   myWinningsEl.textContent = 0;
+   }
+   }
+   });
+   
     /* ================= Claim Prize (FIXED: Super Ticket Generator & Claim Logic) ================= */
     async function claimPrize(prizeName) {
         if (!currentGrid || !currentTicketGameId) {
