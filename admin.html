@@ -50,6 +50,11 @@
   .btn-clear-all-data { background: #8B0000; color: #fff; } /* Dark Red */
   .btn-clear-all-data:hover { background: #B22222; }
 
+  /* Style updates for User Profile items in table */
+  .user-profile-box { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #333; border: 1px solid orange; }
+  .user-info-text { display: flex; flex-direction: column; }
+
   /* Loading Animation Styles */
   #loading-screen {
     position: fixed;
@@ -356,6 +361,9 @@
 
     <div class="section">
       <h2>👥 Users & Balance</h2>
+      <div style="margin-bottom: 12px;" class="action-row">
+        <button onclick="updateAllUsersBalance()">🔄 Update All Users Balance</button>
+      </div>
       <div id="usersTicketsList" class="muted">Loading users & tickets...</div>
     </div>
 
@@ -730,7 +738,7 @@ function startNewRoundAfterGameOver() {
 function endAllGamesAndResetTickets() {
     if (!db) return alert("Firebase not initialized.");
 
-    if (!confirm("क्या आप सच में सभी गेम्स (Current, Next, Friends) को 'Game Over' करके उनके और सभी users के tickets को reset करना चाहते हैं? यह डेटा Permanent डिलीट कर देगा। साथ ही, यह users के 'claims' डेटा को भी हटा देगा, जिससे उन्हें 'already claimed' की समस्या नहीं आएगी।")) {
+    if (!confirm("क्या आप सच में सभी गेम्स (Current, Next, Friends) को 'Game Over' करके उनके and सभी users के tickets को reset करना चाहते हैं? यह डेटा Permanent डिलीट कर देगा। साथ ही, यह users के 'claims' डेटा को भी हटा देगा, जिससे उन्हें 'already claimed' की समस्या नहीं आएगी।")) {
         return;
     }
 
@@ -1469,6 +1477,40 @@ function escapeHtml(str) {
   return String(str || '').replace(/[&<>"'`]/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' })[s]);
 }
 
+// --- NEW BALANCES UPDATE FUNCTIONS ---
+function updateSingleUserBalance(uid) {
+  if (!db) return alert("Firebase not initialized.");
+  const currentBalance = document.getElementById(`balance_input_${uid}`).value;
+  if (currentBalance === "" || isNaN(currentBalance)) return alert("Please enter a valid amount.");
+  
+  db.ref('users/' + uid).update({ balance: Number(currentBalance) })
+    .then(() => alert(`User ${uid} balance updated successfully!`))
+    .catch(e => alert("Error updating balance: " + e.message));
+}
+
+function updateAllUsersBalance() {
+  if (!db) return alert("Firebase not initialized.");
+  const newBalance = prompt("Enter new balance amount to set for ALL users:");
+  if (newBalance === null || newBalance.trim() === "" || isNaN(newBalance)) {
+    return alert("Invalid or cancelled input.");
+  }
+  
+  if(!confirm(`Are you sure you want to set the balance of ALL users to ₹${newBalance}?`)) return;
+
+  db.ref('users').once('value', snap => {
+    const data = snap.val() || {};
+    const updates = {};
+    Object.keys(data).forEach(uid => {
+      updates[`${uid}/balance`] = Number(newBalance);
+    });
+    
+    db.ref('users').update(updates)
+      .then(() => alert("All users balance updated successfully!"))
+      .catch(e => alert("Error updating all balances: " + e.message));
+  });
+}
+// --- END NEW BALANCES UPDATE FUNCTIONS ---
+
 function bindGlobalListeners() {
   if (!db) {
     console.warn("Firebase not initialized. Skipping global listeners.");
@@ -1539,13 +1581,32 @@ function bindGlobalListeners() {
       let rows = '';
       Object.keys(data).forEach(uid => {
         const u = data[uid] || {};
+        const profileImageUrl = u.image || u.profileImage || u.profileUrl || ''; 
+        const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+        
         rows += `<tr>
-          <td><b>${escapeHtml(uid)}</b><div class="muted">${escapeHtml(u.name || '')}</div></td>
-          <td>₹${u.balance || 0}</td>
+          <td>
+            <div class="user-profile-box">
+              <img src="${profileImageUrl ? escapeHtml(profileImageUrl) : defaultAvatar}" class="user-avatar" alt="Avatar"/>
+              <div class="user-info-text">
+                <b>ID: ${escapeHtml(uid)}</b>
+                <span style="color:orange; font-size:14px;">Name: ${escapeHtml(u.name || 'N/A')}</span>
+                <span class="muted">Phone: ${escapeHtml(u.phone || 'N/A')}</span>
+                <span class="muted">Email: ${escapeHtml(u.email || 'N/A')}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span style="font-size:16px; font-weight:bold; color:#32CD32; margin-right:5px;">₹</span>
+              <input type="number" id="balance_input_${uid}" value="${u.balance || 0}" style="width:90px; padding:4px; font-size:14px;" />
+              <button onclick="updateSingleUserBalance('${uid}')" style="padding:4px 8px; font-size:13px;">Update</button>
+            </div>
+          </td>
         </tr>`;
       });
       if (!rows) rows = '<tr><td colspan="2" class="muted">No users found</td></tr>';
-      document.getElementById('usersTicketsList').innerHTML = `<table class="table-small"><thead><tr><th>User ID</th><th>Balance</th></tr></thead><tbody>${rows}</tbody></table>`;
+      document.getElementById('usersTicketsList').innerHTML = `<table class="table-small"><thead><tr><th>User Profile Info</th><th>Wallet Balance</th></tr></thead><tbody>${rows}</tbody></table>`;
     });
   }
 
