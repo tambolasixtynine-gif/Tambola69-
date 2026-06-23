@@ -472,6 +472,43 @@
             border: none;
             width: auto;
         }
+        
+        /* --- Added Profile Reminder CSS --- */
+        .profile-reminder{
+            position:fixed;
+            right:20px;
+            bottom:90px;
+            background:#ff9800;
+            color:#fff;
+            padding:12px 16px;
+            border-radius:30px;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            font-weight:bold;
+            cursor:pointer;
+            box-shadow:0 4px 10px rgba(0,0,0,0.3);
+            z-index:9999;
+            animation:pulseProfile 1.5s infinite;
+        }
+
+        .profile-reminder-icon{
+            width:30px;
+            height:30px;
+            background:#fff;
+            color:#ff9800;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:18px;
+        }
+
+        @keyframes pulseProfile{
+            0%{transform:scale(1);}
+            50%{transform:scale(1.08);}
+            100%{transform:scale(1);}
+        }
     </style>
 </head>
 <body>
@@ -815,6 +852,12 @@
         </div>
     </div>
 </div>
+
+<div id="profileReminder" class="profile-reminder" style="display:none;">
+    <div class="profile-reminder-icon">👤</div>
+    <span>Create Your Profile First</span>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -1069,7 +1112,6 @@
         });
     });
 </script>
-
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
@@ -2382,12 +2424,14 @@
     (function setupHamburger(){
     const menuToggleEl = document.getElementById('menuToggle');
     const menuPanelEl = document.getElementById('menuPanel');
+    if(menuToggleEl && menuPanelEl){
     menuToggleEl.addEventListener('click', ()=> menuPanelEl.classList.toggle('show'));
     document.addEventListener('click', (e)=>{
     if(!menuPanelEl.contains(e.target) && e.target !== menuToggleEl && e.target.closest('.hamburger') !== menuToggleEl){
     menuPanelEl.classList.remove('show');
     }
     });
+    }
     })();
     
     if(viewProfileBtn){
@@ -2462,7 +2506,16 @@
     });
     }
     
+    // ================= PROFILE REMINDER CLICK EVENT =================
+    const profileReminder = document.getElementById('profileReminder');
+    if(profileReminder){
+    profileReminder.addEventListener('click', ()=>{
+    showProfileModal();
+    });
+    }
+    
     // ================= IMAGE PREVIEW =================
+    if(profileImageUpload){
     profileImageUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -2473,6 +2526,7 @@
     reader.readAsDataURL(file);
     }
     });
+    }
     
     // ================= SAVE PROFILE (CLOUDINARY FIXED) =================
     if(saveProfileBtn){
@@ -2508,7 +2562,7 @@
     const formData = new FormData();
     formData.append('file', imageFile);
     formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    formData.append('folder', 'tambola_profiles'); // Optional: folder name
+    formData.append('folder', 'tambola_profiles');
     
     const response = await fetch(CLOUDINARY_URL, {
     method: 'POST',
@@ -2518,7 +2572,7 @@
     if (!response.ok) throw new Error("Cloudinary upload failed");
     
     const cloudData = await response.json();
-    uploadedImageUrl = cloudData.secure_url; // Yeh aapka final image link hai
+    uploadedImageUrl = cloudData.secure_url;
     }
     
     // Save data to Firebase Realtime Database
@@ -2549,7 +2603,6 @@
     imageUrl
     });
     
-    // Local state update (ensure setLocalProfile is defined in your main code)
     if(typeof setLocalProfile === "function") {
     setLocalProfile(uid, name, phone, email, imageUrl);
     }
@@ -2560,6 +2613,13 @@
     myImageUrl = imageUrl;
     
     alert('Profile saved successfully!');
+    
+    // Profile save hote hi reminder ko hide karein
+    const reminder = document.getElementById('profileReminder');
+    if(reminder){
+    reminder.style.display = 'none';
+    }
+    
     await loadAndShowProfile();
     
     } catch (error) {
@@ -2567,6 +2627,37 @@
     alert("Error saving profile");
     }
     }
+    
+    // ================= PROFILE REMINDER LOGIC =================
+    async function checkProfileReminder() {
+    const reminder = document.getElementById('profileReminder');
+    if (!reminder) return;
+    
+    const uid = localStorage.getItem(LS_UID);
+    
+    if (!uid) {
+    reminder.style.display = 'flex';
+    return;
+    }
+    
+    try {
+    const snap = await db.ref('users/' + uid).once('value');
+    const data = snap.val() || {};
+    
+    if (!data.name) {
+    reminder.style.display = 'flex';
+    } else {
+    reminder.style.display = 'none';
+    }
+    
+    } catch (err) {
+    console.error(err);
+    }
+    }
+    
+    // Login ya Page load hone ke baad auto-call
+    checkProfileReminder();
+    
     
     // --- END FIX 4 ---
 
