@@ -865,6 +865,42 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
 <script>
+    // --- Added Profile Reminder Logic ---
+    async function checkProfileReminder() {
+        const reminder = document.getElementById('profileReminder');
+        if (!reminder) return;
+
+        // Aapki standard variable LS_UID ya Firebase current user id use kar sakte hain
+        const uid = localStorage.getItem('LS_UID') || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+
+        if (!uid) {
+            reminder.style.display = 'flex';
+            return;
+        }
+
+        try {
+            const snap = await firebase.database().ref('users/' + uid).once('value');
+            const data = snap.val() || {};
+
+            if (!data.name) {
+                reminder.style.display = 'flex';
+            } else {
+                reminder.style.display = 'none';
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // Reminder Click Event
+    const profileReminder = document.getElementById('profileReminder');
+    if(profileReminder){
+        profileReminder.addEventListener('click', ()=>{
+            const profileModal = document.getElementById('profileModal');
+            if(profileModal) profileModal.style.display = 'flex';
+        });
+    }
+
     // Enhanced Animation Function
     function startEnhancedAnimation() {
         const animationContainer = document.getElementById('animationContainer');
@@ -973,8 +1009,7 @@
             ease: 'power3.out'
         }, '-=1');
 
-        // Optional: Transition to main game after login (assuming login is handled elsewhere)
-        // For demo, let's assume clicking a login button triggers this
+        // Transition to main game after login click
         animationLoginBox.querySelectorAll('.animation-login-button').forEach(button => {
             button.addEventListener('click', () => {
                 gsap.to(animationContainer, {
@@ -987,7 +1022,11 @@
                             opacity: 0,
                             y: 50,
                             duration: 0.8,
-                            ease: 'power2.out'
+                            ease: 'power2.out',
+                            onComplete: () => {
+                                // --- HERE IT TRRIGERS: Animation video khatam aur home screen aane ke baad notification trigger hoga ---
+                                checkProfileReminder();
+                            }
                         });
                     }
                 });
@@ -1114,7 +1153,6 @@
 </script>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
 <script>
     /* ====================================================== */
     /* 🔥🔥🔥 PASTE YOUR FIREBASE CONFIG HERE 🔥🔥🔥        */
@@ -3632,3 +3670,4 @@
 </script>
 </body>
 </html>
+
