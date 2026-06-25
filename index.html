@@ -66,8 +66,14 @@
         .modal .btn{background:#ff6600;color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700;}
         .modal .btn.secondary{background:#555;}
         .modal .note{font-size:12px;color:#666;margin-top:6px;}
-        .waiting-wrapper{max-width:720px;margin:18px auto;position:relative;}
-        .waiting-box{
+        
+        /* Chupaane wale sections initially hidden rahenge */
+        .waiting-wrapper{max-width:720px;margin:18px auto;position:relative; display:none;}
+        .claim-box-style{display:none;}
+        .tambola-board-container{display:none;}
+        .history-box{display:none;}
+
+        .waiting-box {
             background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65));
             border-radius:16px;
             padding:18px 18px 36px 18px;
@@ -601,7 +607,7 @@
         <div style="margin-top:8px; font-size:12px; opacity:0.9;">Tip: Tap "Watch Live" to start the stream inside the app. (Video Classification: Live Draw)</div>
     </div>
 
-    <div class="waiting-wrapper">
+    <div class="waiting-wrapper" id="globalLiveNumberBox">
         <div class="waiting-box" id="waitingBox">
             <div class="waiting-title" id="waitingTitle">Waiting for Draw...</div>
             <div class="waiting-desc" id="waitingDesc">No active room • Global draw idle</div>
@@ -632,7 +638,7 @@
         </div>
     </div>
 
-    <div class="claimed-box" id="claimBox">
+    <div class="claimed-box claim-box-style" id="claimBox">
         <h3>Claim Your Prize 🎁</h3>
         <div class="claim-buttons">
             <button class="claim-button" data-prize="Early Five">Early Five ₹1000</button>
@@ -643,12 +649,13 @@
             <button class="claim-button" data-prize="Full House">Full House ₹5000</button>
         </div>
     </div>
-    <div class="tambola-board-container">
+    
+    <div class="tambola-board-container" id="tambolaBoardContainerGlobal">
         <h3>Tambola Board</h3>
         <div class="tambola-board-grid" id="tambola-board"></div>
     </div>
 
-    <div class="history-box" id="historyBox">
+    <div class="history-box" id="historyBoxGlobal">
         <h3>Drawn Numbers History</h3>
         <div id="history">None</div>
     </div>
@@ -707,6 +714,7 @@
         </div>
     </div>
 </div>
+
 <div class="modal-backdrop" id="withdrawModal" style="display:none;">
     <div class="modal">
         <h3>Request Withdrawal</h3>
@@ -810,6 +818,7 @@
         </div>
     </div>
 </div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -817,7 +826,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
 <script>
-    // Enhanced Animation Function
     function startEnhancedAnimation() {
         const animationContainer = document.getElementById('animationContainer');
         const animationTicket = document.getElementById('animationTicket');
@@ -826,15 +834,12 @@
         const finalNumber = document.querySelector('.final-number');
         const animationLoginBox = document.getElementById('animationLoginBox');
 
-        // Animation Timeline
         const tl = gsap.timeline({
             onComplete: () => {
-                // Ensure auth state is only checked after timeline completes fully
                 firebase.auth().onAuthStateChanged((user) => {
                     if (user) {
                         handlePostLoginFlow(user);
                     } else {
-                        // Show login box after animation completes if not authenticated
                         gsap.to(animationTicket, { opacity: 0, duration: 0.5 });
                         gsap.to(animationLoginBox, {
                             opacity: 1,
@@ -848,13 +853,11 @@
             }
         });
 
-        // Ticket Entrance Animation
         tl.fromTo(animationTicket, 
             { opacity: 0, scale: 0.5, rotateY: -90, y: 100 },
             { opacity: 1, scale: 1, rotateY: 0, y: 0, duration: 1, ease: 'elastic.out(1, 0.5)' }
         );
 
-        // Header Animation
         tl.from('.animation-header', {
             y: -50,
             opacity: 0,
@@ -862,14 +865,12 @@
             ease: 'power3.out'
         }, '-=0.5');
 
-        // Spinner Animation
         tl.to(spinner, {
             rotation: 720,
             duration: 2,
             ease: 'power2.inOut'
         }, '-=0.5');
 
-        // Spinner Number Counting Animation
         let number = { value: 0 };
         tl.to(number, {
             value: 69,
@@ -880,7 +881,6 @@
             ease: 'power2.inOut'
         }, '-=2');
 
-        // Final Number Spot Animation
         tl.from('.final-number-spot', {
             scale: 0.8,
             opacity: 0,
@@ -888,7 +888,6 @@
             ease: 'back.out(1.7)'
         }, '-=1.5');
 
-        // Final Number Reveal with Bounce
         tl.to('.final-number', {
             opacity: 1,
             y: 0,
@@ -897,7 +896,6 @@
             ease: 'bounce.out'
         }, '-=0.5');
 
-        // Confetti Animation
         function createConfetti() {
             const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#2ecc71'];
             for (let i = 0; i < 50; i++) {
@@ -920,10 +918,8 @@
             }
         }
 
-        // Trigger confetti when final number is revealed
         tl.call(createConfetti, null, '-=0.5');
 
-        // Footer Animation
         tl.from('.footer', {
             y: 50,
             opacity: 0,
@@ -931,11 +927,9 @@
             ease: 'power3.out'
         }, '-=1');
         
-        // Add a slight hold delay at the end of full display so it plays completely
         tl.to({}, { duration: 1.5 });
     }
 
-    // Handle Google Sign-In Trigger
     document.getElementById('googleLoginBtn').addEventListener('click', () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         firebase.auth().signInWithPopup(provider)
@@ -948,12 +942,10 @@
             });
     });
 
-    // Check Profile and transition layout
     function handlePostLoginFlow(user) {
         const animationContainer = document.getElementById('animationContainer');
         const mainGameContainer = document.getElementById('mainGameContainer');
 
-        // Switch to home interface view smoothly
         gsap.to(animationContainer, {
             opacity: 0,
             duration: 0.5,
@@ -967,21 +959,17 @@
                     ease: 'power2.out'
                 });
 
-                // Check in Realtime Database if user profile properties exist
                 firebase.database().ref('users/' + user.uid).once('value')
                     .then((snapshot) => {
                         const data = snapshot.val() || {};
                         if (!data.name) {
-                            // Trigger profile modal only if new user (no data exists)
                             document.getElementById('profileModal').style.display = 'flex';
                             document.getElementById('profileForm').style.display = 'block';
                             document.getElementById('profileView').style.display = 'none';
                             
-                            // Autofill baseline properties from Google Auth data
                             document.getElementById('profileNameInput').value = user.displayName || '';
                             document.getElementById('profileEmailInput').value = user.email || '';
                         } else {
-                            // Already logged-in user: hide modal explicitly
                             document.getElementById('profileModal').style.display = 'none';
                             localStorage.setItem('LS_UID', user.uid);
                         }
@@ -990,7 +978,6 @@
         });
     }
 
-    // This function will render the slider using data from Firebase
     function renderSlider(slidesData, slideIntervalMs) {
         const sliderTrack = document.getElementById('sliderTrack');
         const sliderDotsContainer = document.getElementById('sliderDots');
@@ -1105,12 +1092,7 @@
 </script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-
 <script>
-    /* ====================================================== */
-    /* 🔥🔥🔥 PASTE YOUR FIREBASE CONFIG HERE 🔥🔥🔥        */
-    /* ====================================================== */
-    
     const firebaseConfig = {
       apiKey: "AIzaSyBna8v2aVHVPwvHN4CeV3yRdY3eU3MwXYE",
       authDomain: "tambola69-d0f60.firebaseapp.com",
@@ -1123,10 +1105,10 @@
     };
     
     if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("Firebase connection successful!");
+        firebase.initializeApp(firebaseConfig);
+        console.log("Firebase connection successful!");
     } else {
-    console.log("Firebase app already running.");
+        console.log("Firebase app already running.");
     }
     
     const db = firebase.database();
@@ -1163,8 +1145,6 @@
     const submitWithdrawBtn = document.getElementById('submitWithdrawBtn');
     const withdrawAmount = document.getElementById('withdrawAmount');
     const withdrawDest = document.getElementById('withdrawDest');
-    // 🔥 New Share Button
-    const shareBtn = document.getElementById('shareBtn');
 
     const createRoomBtn = document.getElementById('createRoomBtn');
     const joinRoomBtn = document.getElementById('joinRoomBtn');
@@ -1191,9 +1171,8 @@
     const userGamesRef = db.ref('userTickets');
     const claimsRef=db.ref('claims');
     const winnersRef=db.ref('winners');
-    const gamePrizesRef = db.ref('gamePrizes'); // Central prize list
+    const gamePrizesRef = db.ref('gamePrizes');
 
-    // Add these new element references
     const profileModal = document.getElementById('profileModal');
     const profileForm = document.getElementById('profileForm');
     const profileView = document.getElementById('profileView');
@@ -1210,44 +1189,107 @@
     const editProfileBtn = document.getElementById('editProfileBtn');
     const closeViewProfileBtn = document.getElementById('closeViewProfileBtn');
 
-    // --- ADDED ---
     const winnerProfileModal = document.getElementById('winnerProfileModal');
     const winnerProfileImage = document.getElementById('winnerProfileImage');
     const winnerProfileName = document.getElementById('winnerProfileName');
     const winnerGamesList = document.getElementById('winnerGamesList');
-    const myWinningsEl = document.getElementById('myWinnings'); // 🔥 Element for Winnings
-    // --- END ADDED ---
+    const myWinningsEl = document.getElementById('myWinnings');
 
+    /* === 🔥 VISIBILITY LOGIC FOR MEGA/GLOBAL CONTEST & FRIENDS GAME === */
+    function checkAndToggleGlobalUI(hasTicket, gameState) {
+        const globalLiveNumberBox = document.getElementById('globalLiveNumberBox');
+        const claimBox = document.getElementById('claimBox');
+        const boardContainer = document.getElementById('tambolaBoardContainerGlobal');
+        const historyBox = document.getElementById('historyBoxGlobal');
+        const nextGameBoxTop = document.getElementById('nextGameBoxTop');
 
-   /* ================= CLAIM BUTTONS - EVENT DELEGATION (ONLY ONCE) ================= */
+        if (hasTicket) {
+            // Ticket milne ke baad live components show honge
+            globalLiveNumberBox.style.display = 'block';
+            userTicketContainer.style.display = 'block';
+            claimBox.style.display = 'block';
+            boardContainer.style.display = 'block';
+            historyBox.style.display = 'block';
+
+            // Agar game start ho chuki hai (state drawing ya active hai), to start game timer box hide hoga
+            if (gameState === 'drawing' || gameState === 'active') {
+                nextGameBoxTop.style.display = 'none';
+            } else {
+                nextGameBoxTop.style.display = 'block';
+            }
+        } else {
+            // Ticket nahi mila to elements hidden rahenge
+            globalLiveNumberBox.style.display = 'none';
+            userTicketContainer.style.display = 'none';
+            claimBox.style.display = 'none';
+            boardContainer.style.display = 'none';
+            historyBox.style.display = 'none';
+            nextGameBoxTop.style.display = 'block';
+        }
+    }
+
+    // Ek static flag check ya state update handler jo trigger ho sake jab user tickets fetch hon
+    let globalHasTicket = false;
+    let globalGameState = 'idle';
+
+    currentGameRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        globalGameState = data.status || 'idle';
+        checkAndToggleGlobalUI(globalHasTicket, globalGameState);
+    });
+
+    // Mock/Example Event logic hook to simulate ticket arrival
+    // Aapke original ticket loading function ke sath integrate karne ke liye ise true set karein
+    function onUserTicketReceived(received) {
+        globalHasTicket = received;
+        checkAndToggleGlobalUI(globalHasTicket, globalGameState);
+    }
+
+    /* === Play With Friends UI Trigger handling === */
+    if(startRoomGameBtn) {
+        startRoomGameBtn.addEventListener('click', () => {
+            // Jaise hi start button click hoga, play friends box ke thik niche live draw UI visible hoga
+            const globalLiveNumberBox = document.getElementById('globalLiveNumberBox');
+            const claimBox = document.getElementById('claimBox');
+            const boardContainer = document.getElementById('tambolaBoardContainerGlobal');
+            const historyBox = document.getElementById('historyBoxGlobal');
+
+            globalLiveNumberBox.style.display = 'block';
+            userTicketContainer.style.display = 'block';
+            claimBox.style.display = 'block';
+            boardContainer.style.display = 'block';
+            historyBox.style.display = 'block';
+        });
+    }
+
+   /* ================= CLAIM BUTTONS - EVENT DELEGATION ================= */
    document.addEventListener('click', async function(e) {
-   if (e.target && e.target.classList.contains('claim-button')) {
-   e.preventDefault();
-   e.stopPropagation();
-   
-   const button = e.target;
-   const prizeName = button.getAttribute('data-prize');
-   if (!prizeName) return;
-   
-   // Prevent double-click
-   button.disabled = true;
-   button.style.opacity = '0.6';
-   
-   try {
-   await claimPrize(prizeName);
-   } catch (err) {
-   console.error("Claim failed:", err);
-   } finally {
-   setTimeout(() => {
-   // Only re-enable if the button doesn't show CLAIMED (i.e., claim failed)
-   if (!button.innerHTML.includes('CLAIMED')) {
-   button.disabled = false;
-   button.style.opacity = '1';
-   }
-   }, 1000);
-   }
-   }
+       if (e.target && e.target.classList.contains('claim-button')) {
+           e.preventDefault();
+           e.stopPropagation();
+           
+           const button = e.target;
+           const prizeName = button.getAttribute('data-prize');
+           if (!prizeName) return;
+           
+           button.disabled = true;
+           button.style.opacity = '0.6';
+           
+           try {
+               await claimPrize(prizeName);
+           } catch (err) {
+               console.error("Claim failed:", err);
+           } finally {
+               setTimeout(() => {
+                   if (!button.innerHTML.includes('CLAIMED')) {
+                       button.disabled = false;
+                       button.style.opacity = '1';
+                   }
+               }, 1000);
+           }
+       }
    });
+
 
     /* ================= Decorative random box colors ================= */
     const boxes = [
