@@ -1185,31 +1185,7 @@
 </script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-    /* ====================================================== */
-    /* 🔥🔥🔥 PASTE YOUR FIREBASE CONFIG HERE 🔥🔥🔥        */
-    /* ====================================================== */
     
-    const firebaseConfig = {
-      apiKey: "AIzaSyBna8v2aVHVPwvHN4CeV3yRdY3eU3MwXYE",
-      authDomain: "tambola69-d0f60.firebaseapp.com",
-      databaseURL: "https://tambola69-d0f60-default-rtdb.firebaseio.com",
-      projectId: "tambola69-d0f60",
-      storageBucket: "tambola69-d0f60.firebasestorage.app",
-      messagingSenderId: "156287171993",
-      appId: "1:156287171993:web:1ad728a677ea5c4df8e708",
-      measurementId: "G-SY7WL73GRZ"
-    };
-    
-    if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("Firebase connection successful!");
-    } else {
-    console.log("Firebase app already running.");
-    }
-    
-    const db = firebase.database();
-    const storage = firebase.storage();
-    const storageRef = storage.ref();
 
     /* ================= Elements ================= */
     const tambolaBoardEl = document.getElementById('tambola-board');
