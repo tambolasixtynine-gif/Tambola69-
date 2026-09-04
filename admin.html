@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tambola 69 - Admin Panel</title>
+<style>
+  body { 
+    font-family: Arial, Helvetica, sans-serif; 
+    background: #111; 
+    color: #fff; 
+    text-align: center; 
+    padding: 18px; 
+    margin: 0; 
+    overflow-x: hidden;
+  }
+  h1,h2,h3 { color: orange; margin: 10px 0; }
+  .section { background: #222; padding: 14px; margin: 12px auto; max-width: 1000px; border-radius: 10px; text-align:left; }
+  input, button, select, textarea { font-size: 15px; padding: 8px; margin: 6px 4px; border-radius: 6px; border: none; }
+  button { background: orange; color: #000; cursor: pointer; font-weight: 700; }
+  button:hover { background:#ff8800; }
+  .action-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .live-box { background:#000; padding:8px 10px; border-radius:8px; display:inline-block; margin-left:8px; }
+  .tambola-board, .ticket-board { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .board-cell, .ticket-cell { width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#333; border-radius:6px; font-weight:bold; color:#fff; cursor:pointer; }
+  .board-cell.drawn { background:#ff8800; color:#000; font-weight:bold; }
+  .winner-card { background:#000; padding:10px; margin:8px 0; border-radius:8px; }
+  .claim-card { background:#1a1a1a; padding:10px; margin:8px 0; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .room-select { background:#111; padding:8px; border-radius:8px; display:flex; gap:8px; align-items:center; }
+  .small { font-size:13px; padding:6px; }
+  textarea { width:100%; min-height:60px; border-radius:6px; }
+  .muted { color:#bbb; font-size:13px; }
+  .table-wrap{ overflow:auto; border-radius:8px; border:1px solid #333; }
+  table { width:100%; border-collapse: collapse; }
+  th, td { padding:8px; border-bottom:1px solid #333; vertical-align: top; text-align:left; }
+  th { position: sticky; top:0; background:#1b1b1b; }
+  .row-actions button{ margin:0 4px; padding:6px 8px; }
+  .w-120{ width:120px; }
+  .w-160{ width:160px; }
+  .w-220{ width:220px; }
+  .w-60{ width:60px; }
+  .table-small{ width:100%; border-collapse:collapse; margin-top:8px }
+  .table-small th, .table-small td { padding:8px; border-bottom:1px solid #333; font-size:14px; text-align:left }
+  .btn-ghost{ background:transparent; border:1px solid #333; color:#fff; padding:6px 8px; border-radius:6px; cursor:pointer }
+  .btn-danger{ background:#ff4d4f; color:#fff; padding:6px 8px; border-radius:6px; cursor:pointer; border:none }
+  .btn-reset-claims { background: #337ab7; color: #fff; }
+  .btn-reset-claims:hover { background: #286090; }
+  .btn-clear-all-data { background: #8B0000; color: #fff; }
+  .btn-clear-all-data:hover { background: #B22222; }
+
+  .user-profile-box { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #333; border: 1px solid orange; }
+  .user-info-text { display: flex; flex-direction: column; }
+
+  .history-box { background: #181818; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 10px; }
+  .history-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .history-card { background: #222; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #444; }
+  .history-card .val { font-size: 16px; font-weight: bold; color: orange; }
+
+  #loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #2a1a5e 0%, #0a0a2d 50%, #000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+  }
+  #loading-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .welcome-text {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 15px #ff8800, 0 0 25px #ff8800;
+    text-align: center;
+  }
+  #main-content { display: none; }
+  #main-content.visible { display: block; }
+</style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <div class="welcome-text">Welcome to Your Own World Manas</div>
+  </div>
+
+  <div id="main-content">
+    <h1>🎛️ Tambola 69 - Admin Panel</h1>
+
+    <!-- Slider Control -->
+    <div class="section">
+      <h2>🖼️ Slider Control</h2>
+      <div class="action-row">
+        <button onclick="toggleSliderPlay()" id="toggleSliderBtn">▶️ Play</button>
+        <button onclick="prevSlide()">◀️ Previous</button>
+        <button onclick="nextSlide()">Next ▶️</button>
+        <button onclick="addSlideRow()">+ Add Slide</button>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <input type="number" id="gotoIndexInput" min="0" placeholder="Go to index">
+        <button onclick="goToSlide()">Go</button>
+        <div class="live-box">Current Index: <span id="currentIndexDisplay">0</span></div>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <input type="number" id="speedInput" min="500" placeholder="Speed (ms)">
+        <button onclick="setSpeed()">Set Speed</button>
+        <div class="live-box">Speed: <span id="speedDisplay">0 ms</span></div>
+      </div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Image URL</th>
+              <th>Link URL</th>
+              <th>Title</th>
+              <th>Button</th>
+              <th>Size (Optional)</th>
+            </tr>
+          </thead>
+          <tbody id="slidesTbody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-space-between; align-items:center; margin-top:10px;">
+        <div class="muted">Total Slides: <span id="slidesCount">0</span></div>
+        <button onclick="saveSlidesAdvanced()">💾 Save All Slides to DB</button>
+      </div>
+    </div>
+
+    <!-- Music Control -->
+    <div class="section">
+      <h2>🎵 Music Control</h2>
+      <input type="text" id="musicUrlInput" placeholder="Enter music stream URL" style="width:70%">
+      <button onclick="saveMusicUrl()">Save URL</button>
+      <button id="toggleMusicBtn" onclick="toggleMusic()">▶️ Play</button>
+      <div class="muted" style="margin-top:6px">Clients will auto-play if their local mute is off.</div>
+    </div>
+
+    <!-- Video Control -->
+    <div class="section">
+      <h2>🎬 Video Control</h2>
+      <input type="text" id="videoUrlInput" placeholder="Video Stream URL" style="width:70%">
+      <button onclick="saveVideoUrl()">Save URL</button>
+      <button id="toggleVideoBtn" onclick="toggleVideo()">▶️ Play</button>
+    </div>
+
+    <!-- Notifications -->
+    <div class="section">
+      <h2>📢 Notifications</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="notifyTo" type="text" placeholder="User ID (blank = broadcast)" style="width:40%">
+        <label style="display:flex;align-items:center;gap:6px;"><input id="notifyBroadcast" type="checkbox"> Broadcast to all</label>
+      </div>
+      <textarea id="notifyMessage" placeholder="Enter message..."></textarea>
+      <button onclick="sendNotification()">Send Notification</button>
+    </div>
+
+    <!-- Prize Management -->
+    <div class="section">
+      <h2>🎁 Prize Management</h2>
+      <div id="prizeManagementContainer"></div>
+      <button onclick="savePrizes()">💾 Save Prizes</button>
+      <div id="prizeUpdateMessage" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- Current Game -->
+    <div class="section">
+      <h2>🟢 Current Game</h2>
+      <div class="action-row">
+        <button onclick="startGame('current')">Start Game</button>
+        <button onclick="stopGame('current')">Stop Game</button>
+        <button onclick="resetGame('current')">Reset Game</button>
+        <button onclick="toggleGameHistory('current')">📜 History</button>
+        <div class="live-box">Status: <span id="currentStatusDisplay">idle</span></div>
+        <div class="live-box">Live Users: <span id="currentLiveUserDisplay">0</span></div>
+      </div>
+      <div class="action-row" style="margin-top:10px;">
+        <button onclick="clearGameClaimsAndTickets('current')" class="btn-reset-claims">🔄 Clear Claims & Tickets</button>
+      </div>
+      <div style="margin-top:8px">
+        <input id="currentPrizeInput" type="number" min="1" max="100" placeholder="Prize %"><button onclick="updatePrize('current')">Update Prize</button>
+        <div class="live-box">Prize: <span id="currentPrizeDisplay">0%</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="currentTicketsInput" type="number" min="0" placeholder="Tickets Left"><button onclick="updateTickets('current')">Update Tickets</button>
+        <div class="live-box">Tickets Left: <span id="currentTicketsDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="currentSpotsInput" type="number" min="0" placeholder="Total Spots"><button onclick="updateSpots('current')">Update Spots</button>
+        <div class="live-box">Spots: <span id="currentSpotsDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="currentCountdownInput_h" type="number" min="0" placeholder="HH" class="small w-60">
+        <input id="currentCountdownInput_m" type="number" min="0" max="59" placeholder="MM" class="small w-60">
+        <input id="currentCountdownInput_s" type="number" min="0" max="59" placeholder="SS" class="small w-60">
+        <button onclick="updateCountdown('current')">Update Countdown</button>
+        <div class="live-box">Countdown: <span id="currentCountdownDisplay">00:00:00</span></div>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <input id="currentNumberInput" type="number" min="1" max="90" placeholder="Draw Number">
+        <button onclick="broadcastNumber('current')">Broadcast Number</button>
+        <button onclick="autoDrawNumber('current')">Auto Draw (30s)</button>
+      </div>
+      <div id="currentHistoryContainer" style="display:none;" class="history-box"></div>
+      <h3>Board</h3>
+      <div id="currentTambolaBoard" class="tambola-board"></div>
+      <h3>Claims</h3>
+      <div id="currentClaimsList"></div>
+      <h3>Tickets Sold</h3>
+      <div id="currentTicketsList"></div>
+    </div>
+
+    <!-- Next Game -->
+    <div class="section">
+      <h2>🟡 Next Game</h2>
+      <div class="action-row">
+        <button onclick="startGame('next')">Start Game</button>
+        <button onclick="stopGame('next')">Stop Game</button>
+        <button onclick="resetGame('next')">Reset Game</button>
+        <button onclick="toggleGameHistory('next')">📜 History</button>
+        <div class="live-box">Status: <span id="nextStatusDisplay">idle</span></div>
+        <div class="live-box">Live Users: <span id="nextLiveUserDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="nextPrizeInput" type="number" min="1" max="100" placeholder="Prize %"><button onclick="updatePrize('next')">Update Prize</button>
+        <div class="live-box">Prize: <span id="nextPrizeDisplay">0%</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="nextTicketsInput" type="number" min="0" placeholder="Tickets Left"><button onclick="updateTickets('next')">Update Tickets</button>
+        <div class="live-box">Tickets Left: <span id="nextTicketsDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="nextSpotsInput" type="number" min="0" placeholder="Total Spots"><button onclick="updateSpots('next')">Update Spots</button>
+        <div class="live-box">Spots: <span id="nextSpotsDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="nextCountdownInput_h" type="number" min="0" placeholder="HH" class="small w-60">
+        <input id="nextCountdownInput_m" type="number" min="0" max="59" placeholder="MM" class="small w-60">
+        <input id="nextCountdownInput_s" type="number" min="0" max="59" placeholder="SS" class="small w-60">
+        <button onclick="updateCountdown('next')">Update Countdown</button>
+        <div class="live-box">Countdown: <span id="nextCountdownDisplay">00:00:00</span></div>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <input id="nextNumberInput" type="number" min="1" max="90" placeholder="Draw Number">
+        <button onclick="broadcastNumber('next')">Broadcast Number</button>
+        <button onclick="autoDrawNumber('next')">Auto Draw (30s)</button>
+      </div>
+      <div id="nextHistoryContainer" style="display:none;" class="history-box"></div>
+      <h3>Board</h3>
+      <div id="nextTambolaBoard" class="tambola-board"></div>
+      <h3>Claims</h3>
+      <div id="nextClaimsList"></div>
+      <h3>Tickets Sold</h3>
+      <div id="nextTicketsList"></div>
+    </div>
+
+    <!-- Play With Friends -->
+    <div class="section">
+      <h2>🎮 Play With Friends</h2>
+      <div class="action-row">
+        <button onclick="startGame('friends')">Start Game</button>
+        <button onclick="stopGame('friends')">Stop Game</button>
+        <button onclick="resetGame('friends')">Reset Game</button>
+        <button onclick="toggleGameHistory('friends')">📜 History</button>
+        <div class="live-box">Status: <span id="friendsStatusDisplay">idle</span></div>
+        <div class="live-box">Live Users: <span id="friendsLiveUserDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="friendsPrizeInput" type="number" min="1" max="100" placeholder="Prize %"><button onclick="updatePrize('friends')">Update Prize</button>
+        <div class="live-box">Prize: <span id="friendsPrizeDisplay">0%</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="friendsSpotsInput" type="number" min="0" placeholder="Total Spots"><button onclick="updateSpots('friends')">Update Spots</button>
+        <div class="live-box">Spots: <span id="friendsSpotsDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="friendsCountdownInput_h" type="number" min="0" placeholder="HH" class="small w-60">
+        <input id="friendsCountdownInput_m" type="number" min="0" max="59" placeholder="MM" class="small w-60">
+        <input id="friendsCountdownInput_s" type="number" min="0" max="59" placeholder="SS" class="small w-60">
+        <button onclick="updateCountdown('friends')">Update Countdown</button>
+        <div class="live-box">Countdown: <span id="friendsCountdownDisplay">00:00:00</span></div>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <input id="friendsNumberInput" type="number" min="1" max="90" placeholder="Draw Number">
+        <button onclick="broadcastNumber('friends')">Broadcast Number</button>
+        <button onclick="autoDrawNumber('friends')">Auto Draw (30s)</button>
+      </div>
+      <div class="room-select" style="margin-top:10px">
+        <input type="text" id="roomSearch" onkeyup="filterRooms()" placeholder="🔍 Search Room...">
+        <select id="roomDropdown" onchange="changeRoom()"></select>
+      </div>
+      <div id="friendsHistoryContainer" style="display:none;" class="history-box"></div>
+      <h3>Board</h3>
+      <div id="friendsTambolaBoard" class="tambola-board"></div>
+      <h3>Claims</h3>
+      <div id="friendsClaimsList"></div>
+      <h3>Tickets Sold</h3>
+      <div id="friendsTicketsList"></div>
+    </div>
+
+    <!-- Head to Head -->
+    <div class="section">
+      <h2>⚔️ Head to Head</h2>
+      <div class="action-row">
+        <button onclick="startGame('h2h')">Start H2H</button>
+        <button onclick="stopGame('h2h')">Stop H2H</button>
+        <button onclick="resetGame('h2h')">Reset H2H</button>
+        <button onclick="toggleGameHistory('h2h')">📜 History</button>
+        <div class="live-box">Status: <span id="h2hStatusDisplay">idle</span></div>
+        <div class="live-box">Live Users: <span id="h2hLiveUserDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <select id="h2hSpotsSelect">
+          <option value="2">2 Spots</option>
+          <option value="3">3 Spots</option>
+          <option value="5">5 Spots</option>
+        </select>
+        <button onclick="updateH2HSpots()">Update Spots</button>
+        <div class="live-box">Current Spots: <span id="h2hSpotsDisplay">2</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="h2hLeftSpotsInput" type="number" min="0" placeholder="Left Spots">
+        <button onclick="updateH2HLeftSpots()">Update Left Spot</button>
+        <div class="live-box">Left Spot: <span id="h2hLeftSpotsDisplay">0</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="h2hPrizeInput" type="number" min="1" max="100" placeholder="Prize %">
+        <button onclick="updatePrize('h2h')">Update Prize %</button>
+        <div class="live-box">Prize: <span id="h2hPrizeDisplay">0%</span></div>
+      </div>
+      <div style="margin-top:8px">
+        <input id="h2hCountdownInput_h" type="number" min="0" placeholder="HH" class="small w-60">
+        <input id="h2hCountdownInput_m" type="number" min="0" max="59" placeholder="MM" class="small w-60">
+        <input id="h2hCountdownInput_s" type="number" min="0" max="59" placeholder="SS" class="small w-60">
+        <button onclick="updateCountdown('h2h')">Update Countdown</button>
+        <div class="live-box">Countdown: <span id="h2hCountdownDisplay">00:00:00</span></div>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <input id="h2hNumberInput" type="number" min="1" max="90" placeholder="Draw Number">
+        <button onclick="broadcastNumber('h2h')">Broadcast Number</button>
+        <button onclick="autoDrawNumber('h2h')">Auto Draw (30s)</button>
+      </div>
+      <div id="h2hHistoryContainer" style="display:none;" class="history-box"></div>
+      <h3>Board</h3>
+      <div id="h2hTambolaBoard" class="tambola-board"></div>
+      <h3>Claims</h3>
+      <div id="h2hClaimsList"></div>
+      <h3>Tickets / Players</h3>
+      <div id="h2hTicketsList"></div>
+    </div>
+
+    <!-- Withdrawals -->
+    <div class="section">
+      <h2>💰 Withdrawal Requests</h2>
+      <div class="table-wrap"><div id="withdrawalsList" class="muted">Loading withdrawals...</div></div>
+    </div>
+
+    <!-- Search User -->
+    <div class="section">
+      <h2>🔍 Search User by Name</h2>
+      <div class="action-row">
+        <input type="text" id="searchUserNameInput" placeholder="Enter user name..." style="width:260px;">
+        <button onclick="searchUserByName()">Search</button>
+        <button onclick="clearUserSearch()" class="btn-ghost">Clear</button>
+      </div>
+      <div id="searchUserResult" class="muted" style="margin-top:12px;">Search results will appear here...</div>
+    </div>
+
+    <!-- Claims -->
+    <div class="section">
+      <h2>🏆 Global Claims</h2>
+      <button id="toggleClaimsButton" onclick="toggleClaimsView()">View All Claims</button>
+      <div id="claimsList" class="muted" style="margin-top:10px;">Loading claims...</div>
+    </div>
+
+    <!-- Quick Admin Control -->
+    <div class="section">
+      <h2>⚙️ Quick Admin Actions</h2>
+      <div class="action-row">
+        <button onclick="endAllGamesAndResetTickets()" style="background:#ff4d4f; color:#fff;">🛑 Game Over & Reset</button>
+        <button onclick="startNewGameForAll()" style="background:#32CD32; color:#fff;">🚀 Start New Game</button>
+        <button onclick="startNewRoundAfterGameOver()" style="background:#FFD700; color:#000;">🟡 Start New Round</button> 
+        <button onclick="clearAllUserData()" class="btn-clear-all-data">🛑 Clear All User Data</button> 
+      </div>
+    </div>
+  </div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+// IMPORTANT: Replace with actual details from Firebase Console
+const firebaseConfig = {
+  apiKey: "AIzaSyBna8v2aVHVPwvHN4CeV3yRdY3eU3MwXYE",
+  authDomain: "tambola69-d0f60.firebaseapp.com",
+  databaseURL: "https://tambola69-d0f60-default-rtdb.firebaseio.com",
+  projectId: "tambola69-d0f60",
+  storageBucket: "tambola69-d0f60.firebasestorage.app",
+  messagingSenderId: "156287171993",
+  appId: "1:156287171993:web:1ad728a677ea5c4df8e708",
+  measurementId: "G-SY7WL73GRZ"
+};
+
+let db = null;
+let currentGameRef, nextGameRef, h2hGameRef, presenceRef, roomsRef, musicRef, videoRef, sliderRef, prizesRef, userTicketsRef, globalClaimsRef, usersRef, withdrawalsRef;
+let selectedRoom = "Room1";
+let friendsGameRef = null;
+
+try {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  db = firebase.database();
+  
+  currentGameRef = db.ref('currentGame');
+  nextGameRef = db.ref('nextGame');
+  h2hGameRef = db.ref('h2hGame');
+  presenceRef = db.ref('presence');
+  roomsRef = db.ref('rooms');
+  friendsGameRef = roomsRef.child(selectedRoom);
+  musicRef = db.ref("music");
+  videoRef = db.ref("video");
+  sliderRef = db.ref('slider');
+  prizesRef = db.ref('prizes');
+  userTicketsRef = db.ref('userTickets');
+  globalClaimsRef = db.ref('claims');
+  usersRef = db.ref('users');
+  withdrawalsRef = db.ref('withdrawals');
+  
+  console.log("Firebase initialized successfully.");
+} catch (e) {
+  console.error("Firebase init failed:", e);
+}
+
+let localSlides = [];
+const autoTimers = { current: null, next: null, friends: null, h2h: null };
+const countdownIntervals = { current: null, next: null, friends: null, h2h: null };
+let showAllClaims = false;
+let livePresenceData = {};
+
+const listeners = { current: {}, next: {}, friends: {}, h2h: {} };
+
+function refFor(key) {
+  if (key === 'current') return currentGameRef;
+  if (key === 'next') return nextGameRef;
+  if (key === 'friends') return friendsGameRef;
+  if (key === 'h2h') return h2hGameRef;
+  return null;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainContent = document.getElementById('main-content');
+    if (loadingScreen) loadingScreen.classList.add('hidden');
+    if (mainContent) mainContent.classList.add('visible');
+  }, 1500);
+
+  generateBoard('current');
+  generateBoard('next');
+  generateBoard('friends');
+  generateBoard('h2h');
+
+  fillRooms();
+
+  if (db) {
+    renderPrizeInputs();
+    loadAllGameData();
+    renderClaims();
+    listenWithdrawals();
+    listenPresence();
+  } else {
+    alert("Warning: Firebase details missing. Replace placeholders with real credentials!");
+  }
+});
+
+function listenPresence() {
+  if (!presenceRef) return;
+  
+  // Realtime Connection Status Monitoring
+  const amOnlineRef = db.ref('.info/connected');
+  const myPresenceRef = presenceRef.child('admin_node');
+
+  amOnlineRef.on('value', (snapshot) => {
+    if (snapshot.val() === true) {
+      myPresenceRef.onDisconnect().remove();
+      myPresenceRef.set({ online: true, lastSeen: firebase.database.ServerValue.TIMESTAMP, game: 'admin' });
+    }
+  });
+
+  presenceRef.on('value', snap => {
+    livePresenceData = snap.val() || {};
+    updateLiveUserCounts();
+  });
+}
+
+function updateLiveUserCounts() {
+  const counts = { current: 0, next: 0, friends: 0, h2h: 0 };
+  const now = Date.now();
+  
+  Object.keys(livePresenceData).forEach(uid => {
+    const u = livePresenceData[uid];
+    if (u && (u.online === true || (u.lastSeen && (now - u.lastSeen < 60000)))) {
+      const gKey = u.currentGame || u.game || 'current';
+      if (counts[gKey] !== undefined) counts[gKey]++;
+      else if (typeof gKey === 'string' && (gKey.startsWith('Room') || gKey === 'friends')) counts.friends++;
+      else counts.current++;
+    }
+  });
+
+  ['current', 'next', 'friends', 'h2h'].forEach(k => {
+    const el = document.getElementById(`${k}LiveUserDisplay`);
+    if (el) el.innerText = counts[k] || 0;
+  });
+}
+
+function attachGameListeners(key) {
+  const ref = refFor(key);
+  if (!ref) return;
+
+  if (listeners[key].value) ref.off('value', listeners[key].value);
+
+  listeners[key].value = ref.on('value', snap => {
+    const data = snap.val() || {};
+    
+    updateStatusUI(key, data.status || 'idle');
+    
+    const prizeEl = document.getElementById(`${key}PrizeDisplay`);
+    if (prizeEl) prizeEl.innerText = (data.prizePercentage || 0) + '%';
+    
+    const tLeftEl = document.getElementById(`${key}TicketsDisplay`);
+    if (tLeftEl) tLeftEl.innerText = data.ticketsLeft !== undefined ? data.ticketsLeft : 0;
+    
+    const spotsEl = document.getElementById(`${key}SpotsDisplay`);
+    if (spotsEl) spotsEl.innerText = data.totalSpots !== undefined ? data.totalSpots : (key === 'h2h' ? 2 : 0);
+
+    const cdEl = document.getElementById(`${key}CountdownDisplay`);
+    if (cdEl) {
+      const sec = Math.max(0, data.countdown || 0);
+      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      cdEl.innerText = `${h}:${m}:${s}`;
+    }
+
+    if (key === 'h2h') {
+      const leftEl = document.getElementById('h2hLeftSpotsDisplay');
+      if (leftEl) leftEl.innerText = data.leftSpots !== undefined ? data.leftSpots : 0;
+    }
+
+    clearBoardHighlights(key);
+    const hist = data.history || [];
+    if (Array.isArray(hist)) {
+      hist.forEach(num => highlightNumber(key, num));
+    } else if (typeof hist === 'object') {
+      Object.values(hist).forEach(num => highlightNumber(key, num));
+    }
+
+    renderGameClaims(key, data.claims || {});
+    renderGameTickets(key, data.tickets || {});
+
+    const histBox = document.getElementById(`${key}HistoryContainer`);
+    if (histBox && histBox.style.display !== 'none') {
+      renderGameHistoryHTML(key, data);
+    }
+  });
+}
+
+function loadAllGameData() {
+  ['current', 'next', 'friends', 'h2h'].forEach(attachGameListeners);
+  
+  if (sliderRef) {
+    sliderRef.on('value', snap => {
+      const d = snap.val() || {};
+      const curEl = document.getElementById('currentIndexDisplay');
+      const spdEl = document.getElementById('speedDisplay');
+      const btn = document.getElementById('toggleSliderBtn');
+      if (curEl) curEl.innerText = d.currentIndex || 0;
+      if (spdEl) spdEl.innerText = (d.speedMs || 0) + ' ms';
+      if (btn) btn.innerText = d.isPlaying ? '⏸️ Pause' : '▶️ Play';
+      localSlides = d.slides || [];
+      renderSlidesTable();
+    });
+  }
+
+  if (musicRef) {
+    musicRef.on('value', snap => {
+      const d = snap.val() || {};
+      const btn = document.getElementById('toggleMusicBtn');
+      const input = document.getElementById('musicUrlInput');
+      if (btn) btn.innerText = d.isPlaying ? '⏸️ Pause' : '▶️ Play';
+      if (input && d.url && !input.value) input.value = d.url;
+    });
+  }
+
+  if (videoRef) {
+    videoRef.on('value', snap => {
+      const d = snap.val() || {};
+      const btn = document.getElementById('toggleVideoBtn');
+      const input = document.getElementById('videoUrlInput');
+      if (btn) btn.innerText = d.isPlaying ? '⏸️ Pause' : '▶️ Play';
+      if (input && d.url && !input.value) input.value = d.url;
+    });
+  }
+}
+
+function renderGameClaims(key, claimsObj) {
+  const container = document.getElementById(`${key}ClaimsList`);
+  if (!container) return;
+  const keys = Object.keys(claimsObj);
+  if (keys.length === 0) {
+    container.innerHTML = '<div class="muted">No claims yet.</div>';
+    return;
+  }
+  let html = '';
+  keys.forEach(cid => {
+    const c = claimsObj[cid] || {};
+    const status = c.status || 'pending';
+    html += `<div class="claim-card">
+      <div>
+        <div><b>User:</b> ${escapeHtml(c.userName || c.userId || 'Unknown')}</div>
+        <div class="muted"><b>Claim:</b> ${escapeHtml(c.prize || c.claimType || 'N/A')}</div>
+        <div class="muted"><b>Status:</b> ${escapeHtml(status)}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="approveClaim('${cid}')" ${status !== 'pending' ? 'disabled' : ''}>✅</button>
+        <button onclick="rejectClaim('${cid}')" ${status !== 'pending' ? 'disabled' : ''}>❌</button>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderGameTickets(key, ticketsObj) {
+  const container = document.getElementById(`${key}TicketsList`);
+  if (!container) return;
+  const keys = Object.keys(ticketsObj);
+  if (keys.length === 0) {
+    container.innerHTML = '<div class="muted">No tickets sold.</div>';
+    return;
+  }
+  let html = '<div class="table-wrap"><table><thead><tr><th>User</th><th>Ticket ID</th><th>Numbers</th></tr></thead><tbody>';
+  keys.forEach(tid => {
+    const t = ticketsObj[tid] || {};
+    const numbers = Array.isArray(t.numbers) ? t.numbers.join(', ') : (t.numbers || 'N/A');
+    html += `<tr>
+      <td>${escapeHtml(t.userName || t.userId || 'Unknown')}</td>
+      <td>${escapeHtml(t.ticketId || tid)}</td>
+      <td>${escapeHtml(numbers)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function toggleGameHistory(key) {
+  const container = document.getElementById(`${key}HistoryContainer`);
+  if (!container) return;
+  if (container.style.display === 'none' || container.style.display === '') {
+    container.style.display = 'block';
+    refFor(key).once('value').then(snap => renderGameHistoryHTML(key, snap.val() || {}));
+  } else {
+    container.style.display = 'none';
+  }
+}
+
+function renderGameHistoryHTML(key, gameData) {
+  const container = document.getElementById(`${key}HistoryContainer`);
+  if (!container) return;
+  const tickets = gameData.tickets || {};
+  let totalCollection = 0;
+  Object.values(tickets).forEach(t => totalCollection += Number(t.price || t.amount || 0));
+
+  container.innerHTML = `
+    <h3>📜 History Summary</h3>
+    <div class="history-grid">
+      <div class="history-card"><div class="muted">Tickets Sold</div><div class="val">${Object.keys(tickets).length}</div></div>
+      <div class="history-card"><div class="muted">Collection</div><div class="val">₹${totalCollection}</div></div>
+    </div>
+  `;
+}
+
+function startGame(key) {
+  if (!db) return alert("Firebase error");
+  refFor(key).update({ status: 'started', liveNumber: null, history: [], startTime: new Date().toISOString() })
+    .then(() => alert(key + ' Started! ✅'));
+}
+
+function stopGame(key) {
+  if (!db) return alert("Firebase error");
+  clearInterval(autoTimers[key]);
+  clearInterval(countdownIntervals[key]);
+  refFor(key).update({ status: 'stopped', countdown: 0 })
+    .then(() => alert(key + ' Stopped! ⏹'));
+}
+
+function resetGame(key) {
+  if (!db) return alert("Firebase error");
+  clearInterval(autoTimers[key]);
+  clearInterval(countdownIntervals[key]);
+  refFor(key).update({ status: 'idle', liveNumber: null, countdown: 0, history: null, claims: null, tickets: null })
+    .then(() => {
+      clearBoardHighlights(key);
+      alert(key + ' Reset ✅');
+    });
+}
+
+function broadcastNumber(game) {
+  if (!db) return alert("Firebase error");
+  const inputId = (game === 'current') ? 'currentNumberInput' 
+                : (game === 'next') ? 'nextNumberInput' 
+                : (game === 'h2h') ? 'h2hNumberInput' 
+                : 'friendsNumberInput';
+  const val = parseInt(document.getElementById(inputId).value);
+  if (!val || val < 1 || val > 90) return alert('Enter number between 1 and 90');
+
+  const r = refFor(game);
+  r.update({ liveNumber: val }).then(() => {
+    r.child('history').transaction(hist => {
+      let arr = hist || [];
+      if (!arr.includes(val)) arr.push(val);
+      return arr;
+    });
+  });
+}
+
+function autoDrawNumber(game) {
+  if (!db) return alert("Firebase error");
+  clearInterval(autoTimers[game]);
+  const r = refFor(game);
+
+  autoTimers[game] = setInterval(() => {
+    r.child('history').transaction(hist => {
+      let drawn = new Set(hist || []);
+      let remaining = Array.from({ length: 90 }, (_, i) => i + 1).filter(x => !drawn.has(x));
+      if (remaining.length > 0) {
+        let nextNum = remaining[Math.floor(Math.random() * remaining.length)];
+        r.child('liveNumber').set(nextNum);
+        let updated = hist || [];
+        updated.push(nextNum);
+        return updated;
+      } else {
+        clearInterval(autoTimers[game]);
+        return hist;
+      }
+    });
+  }, 30000);
+  alert("Auto draw started (every 30s)");
+}
+
+function generateBoard(game) {
+  const boardId = (game === 'current') ? 'currentTambolaBoard' 
+                : (game === 'next') ? 'nextTambolaBoard' 
+                : (game === 'h2h') ? 'h2hTambolaBoard' 
+                : 'friendsTambolaBoard';
+  const board = document.getElementById(boardId);
+  if (!board) return;
+  board.innerHTML = '';
+  for (let i = 1; i <= 90; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'board-cell';
+    cell.id = game + 'Cell' + i;
+    cell.innerText = i;
+    board.appendChild(cell);
+  }
+}
+
+function highlightNumber(game, num) {
+  const el = document.getElementById(game + 'Cell' + num);
+  if (el) el.classList.add('drawn');
+}
+
+function clearBoardHighlights(game) {
+  const boardId = (game === 'current') ? 'currentTambolaBoard' 
+                : (game === 'next') ? 'nextTambolaBoard' 
+                : (game === 'h2h') ? 'h2hTambolaBoard' 
+                : 'friendsTambolaBoard';
+  const board = document.getElementById(boardId);
+  if (!board) return;
+  Array.from(board.children).forEach(c => c.classList.remove('drawn'));
+}
+
+function updateStatusUI(key, value) {
+  const el = document.getElementById(`${key}StatusDisplay`);
+  if (el) el.innerText = value;
+}
+
+function updatePrize(game) {
+  if (!db) return;
+  const id = (game === 'current') ? 'currentPrizeInput' 
+           : (game === 'next') ? 'nextPrizeInput' 
+           : (game === 'h2h') ? 'h2hPrizeInput' 
+           : 'friendsPrizeInput';
+  const v = parseInt(document.getElementById(id).value) || 0;
+  refFor(game).child('prizePercentage').set(v).then(() => alert('Prize updated!'));
+}
+
+function updateTickets(game) {
+  if (!db) return;
+  const id = (game === 'current') ? 'currentTicketsInput' : (game === 'next') ? 'nextTicketsInput' : 'friendsTicketsInput';
+  const v = parseInt(document.getElementById(id).value) || 0;
+  refFor(game).child('ticketsLeft').set(v).then(() => alert('Tickets updated!'));
+}
+
+function updateSpots(game) {
+  if (!db) return;
+  const id = (game === 'current') ? 'currentSpotsInput' : (game === 'next') ? 'nextSpotsInput' : (game === 'h2h') ? 'h2hSpotsSelect' : 'friendsSpotsInput';
+  const v = parseInt(document.getElementById(id).value) || 0;
+  refFor(game).child('totalSpots').set(v).then(() => alert('Spots updated!'));
+}
+
+// FIXED: Reliable Live Countdown System
+function updateCountdown(key) {
+  if (!db) return alert("Firebase error");
+  const h = parseInt(document.getElementById(key + 'CountdownInput_h').value) || 0;
+  const m = parseInt(document.getElementById(key + 'CountdownInput_m').value) || 0;
+  const s = parseInt(document.getElementById(key + 'CountdownInput_s').value) || 0;
+  let totalSec = (h * 3600) + (m * 60) + s;
+
+  if (totalSec <= 0) return alert("Set a valid countdown time first!");
+
+  if (countdownIntervals[key]) clearInterval(countdownIntervals[key]);
+
+  refFor(key).child('countdown').set(totalSec);
+
+  countdownIntervals[key] = setInterval(() => {
+    totalSec--;
+    if (totalSec <= 0) {
+      clearInterval(countdownIntervals[key]);
+      refFor(key).child('countdown').set(0);
+    } else {
+      refFor(key).child('countdown').set(totalSec);
+    }
+  }, 1000);
+
+  alert(`Countdown for ${key} started!`);
+}
+
+function updateH2HSpots() {
+  if (!db) return;
+  const spots = parseInt(document.getElementById('h2hSpotsSelect').value) || 2;
+  h2hGameRef.child('totalSpots').set(spots).then(() => alert('H2H Spots updated'));
+}
+
+function updateH2HLeftSpots() {
+  if (!db) return;
+  const left = parseInt(document.getElementById('h2hLeftSpotsInput').value) || 0;
+  h2hGameRef.child('leftSpots').set(left).then(() => alert('Left spots updated'));
+}
+
+function saveMusicUrl() {
+  if (!db) return;
+  const url = document.getElementById("musicUrlInput").value.trim();
+  musicRef.update({ url }).then(() => alert("Music URL Saved ✅"));
+}
+
+async function toggleMusic() {
+  if (!db) return;
+  const snap = await musicRef.once("value");
+  const data = snap.val() || {};
+  musicRef.update({ isPlaying: !data.isPlaying });
+}
+
+function saveVideoUrl() {
+  if (!db) return;
+  const url = document.getElementById("videoUrlInput").value.trim();
+  videoRef.update({ url }).then(() => alert("Video URL Saved ✅"));
+}
+
+async function toggleVideo() {
+  if (!db) return;
+  const snap = await videoRef.once("value");
+  const data = snap.val() || {};
+  videoRef.update({ isPlaying: !data.isPlaying });
+}
+
+function renderSlidesTable() {
+  const tbody = document.getElementById('slidesTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  localSlides.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="row-actions">
+        <button onclick="moveSlide(${i}, -1)">↑</button>
+        <button onclick="moveSlide(${i}, 1)">↓</button>
+        <button onclick="deleteSlide(${i})">🗑</button>
+      </td>
+      <td><input class="w-220" value="${escapeHtml(s.src)}" oninput="onCellChange(${i}, 'src', this.value)"></td>
+      <td><input class="w-220" value="${escapeHtml(s.linkUrl || '')}" oninput="onCellChange(${i}, 'linkUrl', this.value)"></td>
+      <td><input class="w-220" value="${escapeHtml(s.title || '')}" oninput="onCellChange(${i}, 'title', this.value)"></td>
+      <td><input class="w-160" value="${escapeHtml(s.buttonText || '')}" oninput="onCellChange(${i}, 'buttonText', this.value)"></td>
+      <td><input class="w-120" value="${escapeHtml(s.width || '')}" oninput="onCellChange(${i}, 'width', this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('slidesCount').innerText = localSlides.length;
+}
+
+function onCellChange(i, key, val) { localSlides[i][key] = val; }
+function addSlideRow() { localSlides.push({ src: '', linkUrl: '', title: '', buttonText: '' }); renderSlidesTable(); }
+function deleteSlide(i) { localSlides.splice(i, 1); renderSlidesTable(); }
+function moveSlide(i, dir) {
+  let target = i + dir;
+  if (target >= 0 && target < localSlides.length) {
+    let temp = localSlides[i];
+    localSlides[i] = localSlides[target];
+    localSlides[target] = temp;
+    renderSlidesTable();
+  }
+}
+
+function saveSlidesAdvanced() {
+  if (!db) return;
+  sliderRef.update({ slides: localSlides }).then(() => alert('Slides saved ✅'));
+}
+
+async function toggleSliderPlay() {
+  if (!db) return;
+  const snap = await sliderRef.once('value');
+  const d = snap.val() || {};
+  sliderRef.update({ isPlaying: !d.isPlaying });
+}
+
+function nextSlide() { if (db) sliderRef.child('currentIndex').transaction(i => (i || 0) + 1); }
+function prevSlide() { if (db) sliderRef.child('currentIndex').transaction(i => Math.max(0, (i || 0) - 1)); }
+function goToSlide() {
+  if (!db) return;
+  const idx = parseInt(document.getElementById('gotoIndexInput').value) || 0;
+  sliderRef.update({ currentIndex: idx });
+}
+
+function setSpeed() {
+  if (!db) return;
+  const ms = parseInt(document.getElementById('speedInput').value) || 1000;
+  sliderRef.update({ speedMs: ms });
+}
+
+function sendNotification() {
+  if (!db) return;
+  const msg = document.getElementById('notifyMessage').value;
+  const to = document.getElementById('notifyTo').value;
+  const isBroadcast = document.getElementById('notifyBroadcast').checked;
+
+  if (!msg.trim()) return alert("Message cannot be empty");
+
+  if (isBroadcast) {
+    db.ref('notifications').push({ message: msg, time: Date.now() }).then(() => alert('Broadcast Sent!'));
+  } else if (to) {
+    db.ref('userNotifications').child(to).push({ message: msg, time: Date.now() }).then(() => alert('Notification Sent!'));
+  }
+}
+
+function fillRooms() {
+  const select = document.getElementById('roomDropdown');
+  if (!select) return;
+  select.innerHTML = '';
+  for (let i = 1; i <= 100; i++) {
+    const opt = document.createElement('option');
+    opt.value = 'Room' + i;
+    opt.innerText = 'Room ' + i;
+    select.appendChild(opt);
+  }
+}
+
+function filterRooms() {
+  const q = document.getElementById('roomSearch').value.toLowerCase();
+  const select = document.getElementById('roomDropdown');
+  Array.from(select.options).forEach(opt => {
+    opt.style.display = opt.text.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function changeRoom() {
+  const sel = document.getElementById('roomDropdown').value;
+  selectedRoom = sel;
+  friendsGameRef = roomsRef.child(selectedRoom);
+  generateBoard('friends');
+  attachGameListeners('friends');
+  alert('Now controlling ' + selectedRoom);
+}
+
+function approveClaim(id) {
+  if (!db) return;
+  db.ref('claims/' + id).update({ status: 'approved' }).then(() => alert('Claim Approved!'));
+}
+
+function rejectClaim(id) {
+  if (!db) return;
+  db.ref('claims/' + id).update({ status: 'rejected' }).then(() => alert('Claim Rejected!'));
+}
+
+function listenWithdrawals() {
+  if (!withdrawalsRef) return;
+  withdrawalsRef.on('value', snap => {
+    const data = snap.val() || {};
+    const keys = Object.keys(data);
+    const container = document.getElementById('withdrawalsList');
+    if (keys.length === 0) {
+      container.innerHTML = '<div class="muted">No withdrawals requested.</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    keys.forEach(id => {
+      const w = data[id] || {};
+      html += `<tr>
+        <td>${escapeHtml(w.userId)}</td>
+        <td>₹${w.amount}</td>
+        <td>${escapeHtml(w.status || 'pending')}</td>
+        <td>
+          <button onclick="approveWithdraw('${id}')">✅</button>
+          <button onclick="rejectWithdraw('${id}')">❌</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  });
+}
+
+function approveWithdraw(id) {
+  if (!db) return;
+  db.ref('withdrawals/' + id).update({ status: 'approved' }).then(() => alert('Withdrawal Approved!'));
+}
+
+function rejectWithdraw(id) {
+  if (!db) return;
+  db.ref('withdrawals/' + id).update({ status: 'rejected' }).then(() => alert('Withdrawal Rejected!'));
+}
+
+function renderPrizeInputs() {
+  if (!prizesRef) return;
+  prizesRef.once('value').then(snap => {
+    const prizes = snap.val() || {};
+    const prizeNames = ['Early Five', 'Top Line', 'Middle Line', 'Bottom Line', 'Full House'];
+    const container = document.getElementById('prizeManagementContainer');
+    let html = '';
+    prizeNames.forEach(prize => {
+      const key = prize.replace(/\s/g, '_');
+      html += `<div style="margin:6px 0;">
+        <label>${prize}: </label>
+        <input type="number" id="prizeInput_${key}" value="${prizes[prize] || ''}">
+      </div>`;
+    });
+    container.innerHTML = html;
+  });
+}
+
+function savePrizes() {
+  if (!db) return;
+  const prizeNames = ['Early Five', 'Top Line', 'Middle Line', 'Bottom Line', 'Full House'];
+  const updates = {};
+  prizeNames.forEach(prize => {
+    const key = prize.replace(/\s/g, '_');
+    const val = document.getElementById(`prizeInput_${key}`).value;
+    updates[prize] = val ? parseInt(val) : 0;
+  });
+  prizesRef.update(updates).then(() => alert('Prizes Saved! ✅'));
+}
+
+function searchUserByName() {
+  if (!db) return;
+  const q = document.getElementById('searchUserNameInput').value.toLowerCase();
+  usersRef.once('value').then(snap => {
+    const users = snap.val() || {};
+    let matches = [];
+    Object.keys(users).forEach(uid => {
+      if ((users[uid].name || '').toLowerCase().includes(q)) matches.push({ uid, ...users[uid] });
+    });
+    const container = document.getElementById('searchUserResult');
+    if (matches.length === 0) container.innerHTML = 'No users found.';
+    else {
+      let html = '';
+      matches.forEach(u => {
+        html += `<div style="background:#333; padding:8px; margin:4px; border-radius:6px;">
+          <b>Name:</b> ${escapeHtml(u.name)} | <b>Balance:</b> ₹${u.balance || 0} | <b>ID:</b> ${u.uid}
+        </div>`;
+      });
+      container.innerHTML = html;
+    }
+  });
+}
+
+function clearUserSearch() {
+  document.getElementById('searchUserNameInput').value = '';
+  document.getElementById('searchUserResult').innerHTML = 'Search results will appear here...';
+}
+
+function toggleClaimsView() {
+  showAllClaims = !showAllClaims;
+  renderClaims();
+}
+
+function renderClaims() {
+  if (!globalClaimsRef) return;
+  globalClaimsRef.once('value').then(snap => {
+    const data = snap.val() || {};
+    const container = document.getElementById('claimsList');
+    const keys = Object.keys(data);
+    if (keys.length === 0) {
+      container.innerHTML = 'No claims found.';
+      return;
+    }
+    let html = '';
+    keys.forEach(id => {
+      const c = data[id];
+      html += `<div class="claim-card">
+        <div><b>User:</b> ${escapeHtml(c.userName || c.userId)} | <b>Prize:</b> ${escapeHtml(c.prize)} | <b>Status:</b> ${c.status}</div>
+      </div>`;
+    });
+    container.innerHTML = html;
+  });
+}
+
+function clearGameClaimsAndTickets(game) {
+  if (!db) return;
+  refFor(game).update({ claims: null, tickets: null }).then(() => alert('Claims & Tickets cleared for ' + game));
+}
+
+function startNewGameForAll() {
+  if (!db) return;
+  ['current', 'next', 'friends', 'h2h'].forEach(k => {
+    refFor(k).update({ status: 'started', history: null, claims: null, tickets: null });
+  });
+  alert('All Games Started! 🚀');
+}
+
+function startNewRoundAfterGameOver() {
+  if (!db) return;
+  ['current', 'next', 'friends', 'h2h'].forEach(k => {
+    refFor(k).update({ status: 'idle', history: null, claims: null, tickets: null });
+  });
+  alert('New Round Initialized! 🟡');
+}
+
+function endAllGamesAndResetTickets() {
+  if (!db) return;
+  ['current', 'next', 'friends', 'h2h'].forEach(k => {
+    refFor(k).update({ status: 'gameOver', history: null, claims: null, tickets: null });
+  });
+  if (userTicketsRef) userTicketsRef.remove();
+  alert('All Games Ended & Tickets Reset! 🛑');
+}
+
+function clearAllUserData() {
+  if (!db) return;
+  if (confirm("⚠️ DANGER: Are you sure you want to erase ALL user data, claims, tickets, and transactions?")) {
+    usersRef.remove();
+    userTicketsRef.remove();
+    globalClaimsRef.remove();
+    withdrawalsRef.remove();
+    alert("All User Data Wiped Out! 🛑");
+  }
+}
+</script>
+</body>
+</html>
