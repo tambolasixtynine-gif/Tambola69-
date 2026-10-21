@@ -1,66 +1,98 @@
 
-const CACHE_NAME = "tambola69-cache-v1";
+const CACHE_NAME = "tambola69-cache-v2";
 
 const APP_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icon-192-3.png",
+  "./icon-512-2.png"
 ];
 
-// Install: cache the main app files
+// Install the new service worker
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_FILES);
-    }).catch((error) => {
-      console.error("Tambola 69 cache install failed:", error);
-    })
+    caches.open(CACHE_NAME)
+      .then(async (cache) => {
+        for (const file of APP_FILES) {
+          try {
+            const response = await fetch(file, {
+              cache: "no-cache"
+            });
+
+            if (response.ok) {
+              await cache.put(file, response);
+            } else {
+              console.warn(
+                "Tambola 69 file not cached:",
+                file,
+                response.status
+              );
+            }
+          } catch (error) {
+            console.warn(
+              "Tambola 69 cache error:",
+              file,
+              error
+            );
+          }
+        }
+      })
+      .catch((error) => {
+        console.error(
+          "Tambola 69 installation error:",
+          error
+        );
+      })
   );
 
   self.skipWaiting();
 });
 
-// Activate: remove old Tambola 69 caches
+// Activate and clean up old Tambola 69 caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys
-          .filter((key) =>
-            key.startsWith("tambola69-cache-") &&
-            key !== CACHE_NAME
-          )
-          .map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter(
+              (key) =>
+                key.startsWith("tambola69-cache-") &&
+                key !== CACHE_NAME
+            )
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch: use network first for pages and Firebase/live requests.
-// Use cache as a fallback for eligible local app files.
+// Handle requests safely
 self.addEventListener("fetch", (event) => {
   const request = event.request;
+
+  if (request.method !== "GET") {
+    return;
+  }
+
   const url = new URL(request.url);
 
-  // Only handle GET requests from this website.
+  // Do not intercept external requests, including Firebase
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Do not cache live API or authentication requests
   if (
-    request.method !== "GET" ||
-    url.origin !== self.location.origin
+    url.pathname.includes("/.well-known/") ||
+    url.pathname.includes("/__/auth/") ||
+    url.pathname.includes("/api/")
   ) {
     return;
   }
 
-  // Never cache Firebase or other live API requests.
-  if (
-    url.hostname.includes("firebase") ||
-    url.pathname.includes("/.well-known/")
-  ) {
-    return;
-  }
-
-  // Network-first strategy for HTML pages.
+  // Network-first for pages and navigation
   if (
     request.mode === "navigate" ||
     url.pathname.endsWith(".html") ||
@@ -71,45 +103,80 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, copy);
-            });
+
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(request, copy))
+              .catch(console.error);
           }
+
           return response;
         })
         .catch(async () => {
           const cached = await caches.match(request);
-          if (cached) return cached;
+
+          if (cached) {
+            return cached;
+          }
 
           return (
-            await caches.match("./index.html")
-          ) || Response.error();
+            (await caches.match("./index.html")) ||
+            Response.error()
+          );
         })
     );
 
     return;
   }
 
-  // Cache-first for other same-origin static files.
+  // Network-first for manifest and icon files.
+  // This avoids serving an old icon from cache.
+  if (
+    url.pathname.endsWith(".png") ||
+    url.pathname.endsWith(".json")
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok && response.type === "basic") {
+            const copy = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(request, copy))
+              .catch(console.error);
+          }
+
+          return response;
+        })
+        .catch(async () => {
+          return (
+            (await caches.match(request)) ||
+            Response.error()
+          );
+        })
+    );
+
+    return;
+  }
+
+  // Network-first for other same-origin resources
   event.respondWith(
-    caches.match(request).then(async (cached) => {
-      if (cached) return cached;
-
-      try {
-        const response = await fetch(request);
-
+    fetch(request)
+      .then((response) => {
         if (response.ok && response.type === "basic") {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, copy);
-          });
+
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(request, copy))
+            .catch(console.error);
         }
 
         return response;
-      } catch (error) {
-        return Response.error();
-      }
-    })
+      })
+      .catch(async () => {
+        return (
+          (await caches.match(request)) ||
+          Response.error()
+        );
+      })
   );
 });
-                  
