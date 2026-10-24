@@ -6031,7 +6031,29 @@ document.addEventListener("DOMContentLoaded", () => {
 /* Global winners handled by smart winners listener + refreshWinnersForGame */
 
 /* History is handled once in the menu section above (userHistoryRef = ALL games, survives ticket delete) */
+(function () {
+  const hEl = document.getElementById('history');
+  if (!hEl) return;
 
+  function toBalls() {
+    if (hEl.querySelector('.draw-history-ball')) return;
+    const nums = hEl.textContent.match(/\d+/g);
+    if (!nums) return;
+    hEl.replaceChildren();
+    nums.forEach((n, i) => {
+      const ball = document.createElement('span');
+      ball.className = 'draw-history-ball';
+      ball.textContent = n;
+      ball.style.setProperty('--ball-index', i);
+      hEl.appendChild(ball);
+    });
+  }
+
+  new MutationObserver(toBalls).observe(hEl, {
+    childList: true, characterData: true, subtree: true
+  });
+  toBalls();
+})();
 
 </script>
 </body>
