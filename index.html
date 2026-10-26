@@ -3821,7 +3821,7 @@ body.in-contest.mode-h2h #waitingDesc {
         const name = localStorage.getItem(LS_NAME) || myName || 'Guest';
         let amount = PRIZE_AMOUNTS[prizeName] || 0;
         const gameId = currentTicketGameId;
-        const isGlobalGame = gameId.startsWith('global-');
+        const isGlobalGame = isMainId(gameId);
 
         // Only Full House in Room Games
         if (!isGlobalGame && prizeName !== 'Full House') {
